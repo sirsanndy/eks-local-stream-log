@@ -76,15 +76,6 @@ services:
       - AWS_PROFILE=${AWS_PROFILE}
       - KUBECONFIG=/root/.kube/config
       - STERN_POD_QUERY=${STERN_POD_QUERY}
-    depends_on:
-      - fluent-bit
-    networks:
-      - logging
-    depends_on:
-      - fluent-bit
-    networks:
-      - logging
-
   # grafana:
   #   container_name: grafana-dev
   #   image: grafana/grafana:latest
@@ -101,6 +92,7 @@ services:
 volumes:
   es_data:
   fluentbit_buffer:
+
 
 networks:
   logging:
