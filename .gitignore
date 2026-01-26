@@ -1,0 +1,28 @@
+# Exclude shared-logs folder
+shared-logs/
+
+# Exclude .exe files
+*.exe
+
+# Exclude .DS_Store files
+.DS_Store
+
+# Logs
+*.log
+*.gz
+*.tar.gz
+*.db
+*.db-shm
+*.db-wal
+
+# Environment variables
+.env
+
+# Docker
+docker-compose.override.yaml
+docker-compose.override.yml
+
+# IDEs
+.vscode/
+.idea/
+**/.DS_Store

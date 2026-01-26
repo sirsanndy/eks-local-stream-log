@@ -1,0 +1,15 @@
+/tmp/logs/stern.log {
+    su root root
+    daily
+    maxsize 125M
+    rotate 15
+    copytruncate
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 root root
+    dateext
+    dateformat -%Y-%m-%d-%H-%M
+    olddir /tmp/logs/archived
+}

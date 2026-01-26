@@ -1,0 +1,114 @@
+services:
+  elasticsearch:
+    container_name: es-dev
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.3
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - logging
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+
+  kibana:
+    container_name: kibana-dev
+    image: docker.elastic.co/kibana/kibana:9.2.3
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+    depends_on:
+      - elasticsearch
+    networks:
+      - logging
+
+  # loki:
+  #   container_name: loki-dev
+  #   image: grafana/loki:latest
+  #   ports:
+  #     - "3100:3100"
+  #   volumes:
+  #     - ./loki/local-config.yaml:/etc/loki/local-config.yaml
+  #     - /mnt/d/Apps/stern/loki-data:/tmp/loki:Z
+  #   command: -config.file=/etc/loki/local-config.yaml
+  #   networks:
+  #     - logging
+
+  fluent-bit:
+    container_name: fluent-bit-dev
+    image: fluent/fluent-bit:latest
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+      - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf
+      - ./shared-logs:/tmp/logs:Z
+      - fluentbit_buffer:/var/lib/fluent-bit/
+    depends_on:
+      - elasticsearch
+      # - loki
+    networks:
+      - logging
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+
+  stern-worker-dev:
+    image: alpine:latest
+    container_name: stern-worker-dev
+    volumes:
+      - ${HOME}/.kube:/root/.kube:ro
+      - ${HOME}/.aws:/root/.aws:ro
+      - ./shared-logs:/tmp/logs:Z
+      - ./logrotate/stern:/tmp/stern-logrotate.conf:ro
+      - ./shared-logs/archived:/tmp/logs/archived:Z
+    environment:
+      - AWS_PROFILE=${AWS_PROFILE}
+      - KUBECONFIG=/root/.kube/config
+      - STERN_POD_QUERY=${STERN_POD_QUERY}
+    entrypoint: /bin/sh -c 
+    command: >
+      "apk add --no-cache aws-cli apache2-utils logrotate dos2unix &&
+      apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing stern &&
+      cp /tmp/stern-logrotate.conf /etc/logrotate.d/stern &&
+      dos2unix /etc/logrotate.d/stern &&
+      chmod 644 /etc/logrotate.d/stern &&
+      chown root:root /etc/logrotate.d/stern &&
+      (while true; do logrotate /etc/logrotate.d/stern; sleep 300; done &) &&
+      > /tmp/logs/stern.log &&
+      stern '${STERN_POD_QUERY}' 
+      --all-namespaces --tail=1 --color never --output json | tee -a /tmp/logs/stern.log"
+    depends_on:
+      - fluent-bit
+    networks:
+      - logging
+
+  # grafana:
+  #   container_name: grafana-dev
+  #   image: grafana/grafana:latest
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   depends_on:
+  #     - loki
+  #     - elasticsearch
+  #   networks:
+  #     - logging
+
+volumes:
+  es_data:
+  fluentbit_buffer:
+
+networks:
+  logging:
+    driver: bridge
