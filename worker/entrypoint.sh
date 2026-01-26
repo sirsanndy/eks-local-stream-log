@@ -6,7 +6,8 @@ set -e
 echo "*/5 * * * * /usr/sbin/logrotate /etc/logrotate.d/stern" > /etc/crontabs/root
 
 # Fix permissions for logrotate config (must be owned by root and 644)
-if [ -f /etc/logrotate.d/stern ]; then
+if [ -f /etc/logrotate.d/stern.template ]; then
+    cp /etc/logrotate.d/stern.template /etc/logrotate.d/stern
     chown root:root /etc/logrotate.d/stern
     chmod 644 /etc/logrotate.d/stern
     dos2unix /etc/logrotate.d/stern

@@ -71,7 +71,7 @@ services:
       - ${HOME}/.kube:/root/.kube:ro
       - ${HOME}/.aws:/root/.aws:ro
       - ./shared-logs:/tmp/logs:Z
-      - ./logrotate/stern:/etc/logrotate.d/stern:ro
+      - ./logrotate/stern:/etc/logrotate.d/stern.template:ro
     environment:
       - AWS_PROFILE=${AWS_PROFILE}
       - KUBECONFIG=/root/.kube/config
