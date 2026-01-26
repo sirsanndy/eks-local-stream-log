@@ -63,30 +63,23 @@ services:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
 
   stern-worker-dev:
-    image: alpine:latest
     container_name: stern-worker-dev
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
     volumes:
       - ${HOME}/.kube:/root/.kube:ro
       - ${HOME}/.aws:/root/.aws:ro
       - ./shared-logs:/tmp/logs:Z
-      - ./logrotate/stern:/tmp/stern-logrotate.conf:ro
-      - ./shared-logs/archived:/tmp/logs/archived:Z
+      - ./logrotate/stern:/etc/logrotate.d/stern:ro
     environment:
       - AWS_PROFILE=${AWS_PROFILE}
       - KUBECONFIG=/root/.kube/config
       - STERN_POD_QUERY=${STERN_POD_QUERY}
-    entrypoint: /bin/sh -c 
-    command: >
-      "apk add --no-cache aws-cli apache2-utils logrotate dos2unix &&
-      apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing stern &&
-      cp /tmp/stern-logrotate.conf /etc/logrotate.d/stern &&
-      dos2unix /etc/logrotate.d/stern &&
-      chmod 644 /etc/logrotate.d/stern &&
-      chown root:root /etc/logrotate.d/stern &&
-      (while true; do logrotate /etc/logrotate.d/stern; sleep 300; done &) &&
-      > /tmp/logs/stern.log &&
-      stern '${STERN_POD_QUERY}' 
-      --all-namespaces --tail=1 --color never --output json | tee -a /tmp/logs/stern.log"
+    depends_on:
+      - fluent-bit
+    networks:
+      - logging
     depends_on:
       - fluent-bit
     networks:
