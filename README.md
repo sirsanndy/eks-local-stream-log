@@ -35,7 +35,15 @@ The stack consists of the following components running in Docker:
 
 ## Configuration
 
-The `docker-compose.yaml` file is configured with the following defaults, which you can override using a `.env` file or environment variables:
+Create a `.env` file in the root directory to configure the stack. You can use the following environment variables:
+
+| Variable | Description | Default / Example |
+| :--- | :--- | :--- |
+| `ELASTIC_PASSWORD` | Password for the `elastic` superuser. | `changeme` |
+| `ELASTICSEARCH_USERNAME` | Username for Kibana to connect to Elasticsearch. | `kibana_system` |
+| `ELASTICSEARCH_PASSWORD` | Password for the `kibana_system` user. | `changeme` |
+| `AWS_PROFILE` | The AWS CLI profile to use from your local credentials. | `default` |
+| `STERN_POD_QUERY` | Regex pattern for Stern to select pods to tail. | `microservice-pod-dev-(service_1\|service_2)` |
 
 ## How to Run
 
